@@ -15,12 +15,10 @@ const FileCard: React.FC<Props> = ({ headText}) => {
     const inputId = useId();
 
     const fileSelected = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.length === 0) {
-            if (dialogOpen) setDialogOpen(false);
-            return;
-        }
+        if (e.target.files?.length === 0) {return;}
         setFile(e.target.files ? URL.createObjectURL(e.target.files[0]) : undefined);
         setPreviewSrc(undefined)
+        setDialogOpen(true)
     };
 
     return (
@@ -37,8 +35,10 @@ const FileCard: React.FC<Props> = ({ headText}) => {
                                 <PlusCircle strokeWidth={2} size={70} />
                             </label>
                             <input
-                                onClick={() => setDialogOpen(true)}
                                 onChange={fileSelected}
+                                onClick={() => {
+                                    if(!!file) setDialogOpen(true)
+                                }}
                                 type="file"
                                 id={inputId}
                                 accept="image/*"
@@ -73,7 +73,7 @@ const FileCard: React.FC<Props> = ({ headText}) => {
                     previewSrc={previewSrc}
                     setPreviewSrc={setPreviewSrc}
                     file={file}
-                    setDialogOpen={() => {
+                    closeDialog={() => {
                         setDialogOpen(false);
                     }}
                 />
