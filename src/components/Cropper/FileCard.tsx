@@ -1,23 +1,27 @@
 "use client";
 
 import React, { useId, useState, ChangeEvent } from "react";
+import { PixelCrop } from "react-image-crop";
 import Dialog from "./Dialog";
+import ImageCropper from "./ImageCropper";
 import { PlusCircle, X } from "lucide-react";
 
 type Props = {
     headText: string,
 };
 
-const FileCard: React.FC<Props> = ({ headText}) => {
+const FileCard: React.FC<Props> = ({ headText }) => {
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
     const [previewSrc, setPreviewSrc] = useState<string>();
     const [file, setFile] = useState<string>();
+    const [initialCrop, setInitialCrop] = useState<PixelCrop | undefined>()
     const inputId = useId();
 
     const fileSelected = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.length === 0) {return;}
+        if (e.target.files?.length === 0) { return; }
         setFile(e.target.files ? URL.createObjectURL(e.target.files[0]) : undefined);
         setPreviewSrc(undefined)
+        setInitialCrop(undefined)
         setDialogOpen(true)
     };
 
@@ -37,7 +41,7 @@ const FileCard: React.FC<Props> = ({ headText}) => {
                             <input
                                 onChange={fileSelected}
                                 onClick={() => {
-                                    if(!!file) setDialogOpen(true)
+                                    if (!!file) setDialogOpen(true)
                                 }}
                                 type="file"
                                 id={inputId}
@@ -68,7 +72,10 @@ const FileCard: React.FC<Props> = ({ headText}) => {
                     )}
                 </div>
             </div>
-            {dialogOpen && (
+            <Dialog header="Crop My Image" dialogOpen={dialogOpen} closeDialog={() => setDialogOpen(false)}>
+                <ImageCropper closeDialog={() => setDialogOpen(false)} setPreviewSrc={setPreviewSrc} file={file} initialCrop={initialCrop} setInitialCrop={setInitialCrop} />
+            </Dialog>
+            {/* {dialogOpen && (
                 <Dialog
                     previewSrc={previewSrc}
                     setPreviewSrc={setPreviewSrc}
@@ -77,7 +84,7 @@ const FileCard: React.FC<Props> = ({ headText}) => {
                         setDialogOpen(false);
                     }}
                 />
-            )}
+            )} */}
         </>
     );
 };

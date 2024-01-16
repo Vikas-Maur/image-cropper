@@ -1,32 +1,90 @@
 'use client'
-import React, { useState, useRef, Dispatch, SetStateAction } from "react";
+import React, { useState, useRef, Dispatch, SetStateAction, MouseEventHandler } from "react";
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop'
 import { useDebounceEffect } from "@/utils/useDebounceEffect";
-import { imgPreview } from "@/utils/imagePreview";
+import { canvasPreview } from "@/utils/canvasPreview";
+
 import "react-image-crop/dist/ReactCrop.css";
 
 
 type Props = {
-    file: string | undefined,
-    localPreview: string | undefined,
-    setLocalPreview: Dispatch<SetStateAction<string | undefined>>
+    file?: string,
+    initialCrop?: PixelCrop,
+    closeDialog: () => void,
+    setPreviewSrc: Dispatch<SetStateAction<string | undefined>>,
+    setInitialCrop: Dispatch<SetStateAction<PixelCrop | undefined>>
 }
 
-const ImageCropper: React.FC<Props> = ({ file, localPreview, setLocalPreview }) => {
+const ImageCropper: React.FC<Props> = ({ file, initialCrop, closeDialog, setPreviewSrc, setInitialCrop }) => {
     const imgRef = useRef<HTMLImageElement>(null);
-    // const previewCanvasRef = useRef<HTMLCanvasElement>(null);
-    const [crop, setCrop] = useState<Crop>();
-    const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+    const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [crop, setCrop] = useState<PixelCrop | undefined>(initialCrop);
+    const [completedCrop, setCompletedCrop] = useState<PixelCrop | undefined>(initialCrop);
+
+    const getCanvasSrc = async () => {
+        const image = imgRef.current;
+        const previewCanvas = previewCanvasRef.current;
+        if (!image || !previewCanvas || !completedCrop) {
+            throw new Error("Crop canvas does not exist");
+        }
+
+        // This will size relative to the uploaded image
+        // size. If you want to size according to what they
+        // are looking at on screen, remove scaleX + scaleY
+        const scaleX = image.naturalWidth / image.width;
+        const scaleY = image.naturalHeight / image.height;
+
+        const offscreen = new OffscreenCanvas(
+            completedCrop.width * scaleX,
+            completedCrop.height * scaleY,
+        );
+        const ctx = offscreen.getContext("2d");
+        if (!ctx) {
+            throw new Error("No 2d context");
+        }
+
+        ctx.drawImage(previewCanvas, 0, 0, previewCanvas.width, previewCanvas.height, 0, 0, offscreen.width, offscreen.height,);
+        // You might want { type: "image/jpeg", quality: <0 to 1> } to
+        // reduce image size
+        const blob = await offscreen.convertToBlob({
+            type: "image/png",
+        });
+
+        const src = URL.createObjectURL(blob)
+
+        return src
+    }
+
+    const okaySelected = async () => {
+        const src = await getCanvasSrc()
+        setInitialCrop(completedCrop)
+        setPreviewSrc(src)
+        closeDialog()
+    }
+
+    const downloadSeclectedPortion = async () => {
+        const src = await getCanvasSrc()
+        const anchorEl = document.createElement('a')
+        anchorEl.href = src
+        anchorEl.setAttribute('download', `My Cropped Image - ${Date.now()}`)
+        anchorEl.click()
+        anchorEl.remove()
+    }
 
     useDebounceEffect(
         async () => {
             if (
                 completedCrop?.width &&
                 completedCrop?.height &&
-                imgRef.current
+                imgRef.current &&
+                previewCanvasRef.current
             ) {
-                const src = await imgPreview(imgRef.current, completedCrop)
-                setLocalPreview(src)
+                // We use canvasPreview as it's much faster than imgPreview.
+                canvasPreview(
+                    imgRef.current,
+                    previewCanvasRef.current,
+                    completedCrop,
+                );
             }
         },
         100,
@@ -34,19 +92,33 @@ const ImageCropper: React.FC<Props> = ({ file, localPreview, setLocalPreview }) 
     );
 
     return (
-        <div className="flex flex-wrap gap-10 justify-center flex-col md:flex-row">
-            <div className="flex justify-start flex-col overflow-clip">
-                <p className="font-bold">Your image</p>
-                <ReactCrop crop={crop} onChange={(_, percentCrop) => setCrop(percentCrop)} onComplete={(c) => setCompletedCrop(c)}>
-                    <img className="max-h-[60vh] w-auto object-cover" ref={imgRef} src={file} />
-                </ReactCrop>
+        <>
+            <div className="flex flex-wrap gap-10 justify-center flex-col md:flex-row">
+                <div className="flex justify-start flex-col overflow-clip">
+                    <p className="font-bold">Your image <span className="text-sm font-normal italic">(start dragging...)</span> </p>
+                    <ReactCrop crop={crop} onChange={(c) => setCrop(c)} onComplete={(c) => setCompletedCrop(c)}>
+                        <img className="max-h-[60vh] w-auto object-cover" ref={imgRef} src={file} />
+                    </ReactCrop>
+                </div>
+                <div className="flex justify-start flex-col flex-1">
+                    <p className="font-bold">Preview</p>
+                    {!!completedCrop && <canvas
+                        ref={previewCanvasRef}
+                        style={{
+                            border: "1px solid black",
+                            objectFit: "contain",
+                            width: completedCrop.width,
+                            height: completedCrop.height,
+                        }}
+                    />}
+
+                </div>
             </div>
-            <div className="flex justify-start flex-col flex-1">
-                <p className="font-bold">Preview</p>
-                <img src={localPreview} className='max-w-full w-fit' alt="" />
-                
+            <div className="mt-5 flex flex-col md:flex-row gap-5 justify-center">
+                <button onClick={okaySelected} className="flex-1 rounded-lg px-5 py-3 bg-blue-500 hover:bg-blue-400 text-white md:text-lg font-bold">Okay</button>
+                <button onClick={downloadSeclectedPortion} className="flex-1 cursor-pointer rounded-lg px-5 py-3 border-2 border-blue-500 hover:bg-blue-500 hover:text-white md:text-lg font-bold md:text-nowrap w-full text-center">Download preview</button>
             </div>
-        </div>
+        </>
     )
 }
 
