@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar" 
 import AllCards from "@/components/Cropper/AllCards"
 import Embed from "@/components/Embed"
+import { Toaster } from "react-hot-toast"
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
       <h2 className="text-center font-semibold text-3xl lg:text-4xl mt-5">Upload Essay Image</h2>
       <AllCards />
       <Embed />
+      <Toaster />
     </div>
   )
 }

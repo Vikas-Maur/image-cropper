@@ -75,16 +75,6 @@ const FileCard: React.FC<Props> = ({ headText }) => {
             <Dialog header="Crop My Image" dialogOpen={dialogOpen} closeDialog={() => setDialogOpen(false)}>
                 <ImageCropper closeDialog={() => setDialogOpen(false)} setPreviewSrc={setPreviewSrc} file={file} initialCrop={initialCrop} setInitialCrop={setInitialCrop} />
             </Dialog>
-            {/* {dialogOpen && (
-                <Dialog
-                    previewSrc={previewSrc}
-                    setPreviewSrc={setPreviewSrc}
-                    file={file}
-                    closeDialog={() => {
-                        setDialogOpen(false);
-                    }}
-                />
-            )} */}
         </>
     );
 };

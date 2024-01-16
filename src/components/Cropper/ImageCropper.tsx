@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useRef, Dispatch, SetStateAction, MouseEventHandler } from "react";
+import React, { useState, useRef, Dispatch, SetStateAction } from "react";
+import toast from "react-hot-toast";
 import ReactCrop, { Crop, PixelCrop } from 'react-image-crop'
 import { useDebounceEffect } from "@/utils/useDebounceEffect";
 import { canvasPreview } from "@/utils/canvasPreview";
@@ -56,19 +57,31 @@ const ImageCropper: React.FC<Props> = ({ file, initialCrop, closeDialog, setPrev
     }
 
     const okaySelected = async () => {
-        const src = await getCanvasSrc()
-        setInitialCrop(completedCrop)
-        setPreviewSrc(src)
-        closeDialog()
+        const toastId = toast.loading("Cropping the image...")
+        try {
+            const src = await getCanvasSrc()
+            setInitialCrop(completedCrop)
+            setPreviewSrc(src)
+            closeDialog()
+            toast.success("Sucessfully cropped the image!", { id: toastId })
+        } catch (error: any) {
+            toast.error(error.message, { id: toastId })
+        }
     }
 
     const downloadSeclectedPortion = async () => {
-        const src = await getCanvasSrc()
-        const anchorEl = document.createElement('a')
-        anchorEl.href = src
-        anchorEl.setAttribute('download', `My Cropped Image - ${Date.now()}`)
-        anchorEl.click()
-        anchorEl.remove()
+        const toastId = toast.loading("Downloading the image...")
+        try{
+            const src = await getCanvasSrc()
+            const anchorEl = document.createElement('a')
+            anchorEl.href = src
+            anchorEl.setAttribute('download', `My Cropped Image - ${Date.now()}`)
+            anchorEl.click()
+            anchorEl.remove()
+            toast.success("Sucessfully downloaded the image!", { id: toastId })
+        } catch (error: any) {
+            toast.error(error.message, { id: toastId })
+        }
     }
 
     useDebounceEffect(
