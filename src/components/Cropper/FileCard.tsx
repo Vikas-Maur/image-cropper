@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import React, { useId, useState, ChangeEvent } from "react";
 import { PixelCrop } from "react-image-crop";
 import Dialog from "./Dialog";
@@ -50,7 +50,7 @@ const FileCard: React.FC<Props> = ({ headText }) => {
                             />
                         </>
                     ) : (
-                        <div className="relative border-2">
+                        <div className="relative max-w-full max-h-full min-h-[36px] min-w-[36px] overflow-y-clip flex justify-center items-center">
                             <button
                                 onClick={
                                     () => {
@@ -65,9 +65,10 @@ const FileCard: React.FC<Props> = ({ headText }) => {
                             <img
                                 onClick={() => setDialogOpen(true)}
                                 src={previewSrc}
-                                className="max-w-full max-h-[80%] object-cover cursor-pointer"
+                                className="cursor-pointer max-w-56 max-h-72"
                                 alt=""
                             />
+                            
                         </div>
                     )}
                 </div>
